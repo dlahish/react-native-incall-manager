@@ -176,6 +176,19 @@ class InCallManager {
         let result = await _InCallManager.chooseAudioRoute(route);
         return result;
     }
+
+    async getRingerMode() {
+      const mode = await _InCallManager.getRingerMode();
+      if (mode === 2) {
+        return 'NORMAL'
+      } else if (mode === 1) {
+        return 'VIBRATE'
+      } else if (mode === 0) {
+        return 'SILENT'
+      } else {
+        return 'FAILED'
+      }
+    }
 }
 
 export default new InCallManager();
