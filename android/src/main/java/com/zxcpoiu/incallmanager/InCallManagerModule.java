@@ -119,6 +119,12 @@ public class InCallManagerModule extends ReactContextBaseJavaModule implements L
     private static final String SPEAKERPHONE_TRUE = "true";
     private static final String SPEAKERPHONE_FALSE = "false";
 
+    static private final int RESULT_SUCCESS = 1;
+    static private final int RESULT_ERROR_RINGTONE_ALREADY_PLAYING = 2;
+    static private final int RESULT_ERROR_RINGER_IN_SILENT = 3;
+    static private final int RESULT_ERROR_NO_AVAILABLE_MEDIA = 4;
+    static private final int RESULT_ERROR_UNKNOWN = 5;
+
     /**
      * AudioDevice is the names of possible audio devices that we currently
      * support.
@@ -921,12 +927,13 @@ public class InCallManagerModule extends ReactContextBaseJavaModule implements L
     }
 
     @ReactMethod
-    public void startRingtone(final String ringtoneUriType, final int seconds) {
+    public void startRingtone(final String ringtoneUriType, final int seconds, Promise promise) {
         try {
             Log.d(TAG, "startRingtone(): UriType=" + ringtoneUriType);
             if (mRingtone != null) {
                 if (mRingtone.isPlaying()) {
                     Log.d(TAG, "startRingtone(): is already playing");
+                    promise.resolve(RESULT_ERROR_RINGTONE_ALREADY_PLAYING);
                     return;
                 } else {
                     stopRingtone(); // --- use brandnew instance
@@ -937,6 +944,7 @@ public class InCallManagerModule extends ReactContextBaseJavaModule implements L
             //if (origRingerMode == AudioManager.RINGER_MODE_NORMAL) {
             if (audioManager.getStreamVolume(AudioManager.STREAM_RING) == 0) {
                 Log.d(TAG, "startRingtone(): ringer is silent. leave without play.");
+                promise.resolve(RESULT_ERROR_RINGER_IN_SILENT);
                 return;
             }
 
@@ -944,6 +952,7 @@ public class InCallManagerModule extends ReactContextBaseJavaModule implements L
             Uri ringtoneUri = getRingtoneUri(ringtoneUriType);
             if (ringtoneUri == null) {
                 Log.d(TAG, "startRingtone(): no available media");
+                promise.resolve(RESULT_ERROR_NO_AVAILABLE_MEDIA);
                 return;
             }
 
@@ -982,9 +991,11 @@ public class InCallManagerModule extends ReactContextBaseJavaModule implements L
                     }
                 }, seconds * 1000);
             }
+            promise.resolve(RESULT_SUCCESS);
         } catch(Exception e) {
             wakeLockUtils.releasePartialWakeLock();
             Log.d(TAG, "startRingtone() failed");
+            promise.resolve(RESULT_ERROR_UNKNOWN);
         }
     }
 

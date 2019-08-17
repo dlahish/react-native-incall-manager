@@ -85,22 +85,26 @@ class InCallManager {
         _InCallManager.setMicrophoneMute(enable);
     }
 
-    startRingtone(ringtone, vibrate_pattern, ios_category, seconds) {
+    async startRingtone(ringtone, vibrate_pattern, ios_category, seconds) {
         ringtone = (typeof ringtone === 'string') ? ringtone : "_DEFAULT_";
         this.vibrate = (Array.isArray(vibrate_pattern)) ? true : false;
         ios_category = (ios_category === 'playback') ? 'playback' : "default";
         seconds = (typeof seconds === 'number' && seconds > 0) ? parseInt(seconds) : -1; // --- android only, default looping
 
+        let result;
         if (Platform.OS === 'android') {
-            _InCallManager.startRingtone(ringtone, seconds);
+            result = await _InCallManager.startRingtone(ringtone, seconds);
         } else {
             _InCallManager.startRingtone(ringtone, ios_category);
+            result = 0;
         }
 
         // --- should not use repeat, it may cause infinite loop in some cases.
         if (this.vibrate) {
             Vibration.vibrate(vibrate_pattern, false); // --- ios needs RN 0.34 to support vibration pattern
         }
+
+        return result;
     }
 
     stopRingtone() {
