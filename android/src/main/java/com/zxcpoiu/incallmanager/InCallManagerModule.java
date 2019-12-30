@@ -33,9 +33,9 @@ import android.os.PowerManager;
 import android.os.Build;
 import android.os.Handler;
 import android.provider.Settings;
-import android.support.annotation.Nullable;
-import android.support.v4.app.ActivityCompat;
-import android.support.v4.content.ContextCompat;
+import androidx.annotation.Nullable;
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
 import android.util.Log;
 import android.util.SparseArray;
 import android.view.Display;
@@ -284,7 +284,7 @@ public class InCallManagerModule extends ReactContextBaseJavaModule implements L
                 @Override
                 public void onReceive(Context context, Intent intent) {
                     if (ACTION_HEADSET_PLUG.equals(intent.getAction())) {
-                        hasWiredHeadset = intent.getIntExtra("state", 0) == 1;
+                        hasWiredHeadset = true;
                         updateAudioRoute();
                         String deviceName = intent.getStringExtra("name");
                         if (deviceName == null) {
@@ -574,7 +574,7 @@ public class InCallManagerModule extends ReactContextBaseJavaModule implements L
             wakeLockUtils.acquirePartialWakeLock();
             if (mRingtone != null && mRingtone.isPlaying()) {
                 Log.d(TAG, "stop ringtone");
-                stopRingtone(); // --- use brandnew instance
+                stopRingtone(null); // --- use brandnew instance
             }
             storeOriginalAudioSetup();
             requestAudioFocus();
@@ -936,7 +936,7 @@ public class InCallManagerModule extends ReactContextBaseJavaModule implements L
                     promise.resolve(RESULT_ERROR_RINGTONE_ALREADY_PLAYING);
                     return;
                 } else {
-                    stopRingtone(); // --- use brandnew instance
+                    stopRingtone(null); // --- use brandnew instance
                 }
             }
 
@@ -983,10 +983,10 @@ public class InCallManagerModule extends ReactContextBaseJavaModule implements L
                 mRingtoneCountDownHandler.postDelayed(new Runnable() {
                     public void run() {
                         try {
-                            Log.d(TAG, String.format("mRingtoneCountDownHandler.stopRingtone() timeout after %d seconds", seconds));
-                            stopRingtone();
+                            Log.d(TAG, String.format("mRingtoneCountDownHandler.stopRingtone(null) timeout after %d seconds", seconds));
+                            stopRingtone(null);
                         } catch(Exception e) {
-                            Log.d(TAG, "mRingtoneCountDownHandler.stopRingtone() failed.");
+                            Log.d(TAG, "mRingtoneCountDownHandler.stopRingtone(null) failed.");
                         }
                     }
                 }, seconds * 1000);
@@ -1000,7 +1000,7 @@ public class InCallManagerModule extends ReactContextBaseJavaModule implements L
     }
 
     @ReactMethod
-    public void stopRingtone() {
+    public void stopRingtone(@Nullable Promise promise) {
         try {
             if (mRingtone != null) {
                 mRingtone.stopPlay();
@@ -1011,8 +1011,14 @@ public class InCallManagerModule extends ReactContextBaseJavaModule implements L
                 mRingtoneCountDownHandler.removeCallbacksAndMessages(null);
                 mRingtoneCountDownHandler = null;
             }
+            if (promise != null) {
+                promise.resolve(RESULT_SUCCESS);
+            }
         } catch(Exception e) {
-            Log.d(TAG, "stopRingtone() failed");
+            Log.d(TAG, "stopRingtone(null) failed");
+            if (promise != null) {
+                promise.resolve(RESULT_ERROR_UNKNOWN);
+            }
         }
         wakeLockUtils.releasePartialWakeLock();
     }
@@ -1609,7 +1615,7 @@ public class InCallManagerModule extends ReactContextBaseJavaModule implements L
     @Override
     public void onHostDestroy() {
         Log.d(TAG, "onDestroy()");
-        stopRingtone();
+        stopRingtone(null);
         stopRingback();
         stopBusytone();
         stop();

@@ -107,11 +107,18 @@ class InCallManager {
         return result;
     }
 
-    stopRingtone() {
+    async stopRingtone() {
         if (this.vibrate) {
             Vibration.cancel();
         }
-        _InCallManager.stopRingtone();
+        let result;
+        if (Platform.OS === 'android') {
+            result = await _InCallManager.stopRingtone();
+        } else {
+            _InCallManager.stopRingtone();
+            result = 0;
+        }
+        return result;
     }
 
     startRingback(ringback) {
